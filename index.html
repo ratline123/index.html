@@ -16,7 +16,7 @@
             const params = new URLSearchParams(window.location.search);
             let song = params.get('song');
             if (!song) {
-                song = "./Bitcoin.mp3";  // Your local file
+                song = "Bitcoin.mp3";  // Your local file
             }
             return song;
         }
